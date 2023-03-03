@@ -443,12 +443,12 @@ class Trainer(transformers.Trainer):
                             def callback(privacy_engine):
                                 """Store clipped gradients for spectrum analysis."""
                                 named_params = privacy_engine.named_params
-                                flat_grad = torch.cat([param.summed_grad.flatten() for _, param in named_params])
-                                flat_grad.div_(privacy_engine.batch_size)
-                                torch.save(
-                                    {"flat_grad": flat_grad.cpu().float()},
-                                    utils.join(store_grads_dir, f'global_step_{self.global_step:06d}.ckpt')
-                                )
+                                # flat_grad = torch.cat([param.summed_grad.flatten() for _, param in named_params])
+                                # flat_grad.div_(privacy_engine.batch_size)
+                                # torch.save(
+                                #     {"flat_grad": flat_grad.cpu().float()},
+                                #     utils.join(store_grads_dir, f'global_step_{self.global_step:06d}.ckpt')
+                                # )
 
                         vector_loss = losses.get("vector_loss")
                         self.optimizer.step(loss=vector_loss, callback=callback)
@@ -592,7 +592,7 @@ class Trainer(transformers.Trainer):
         if objective > self.objective:
             logger.info("Best dev result: {}".format(objective))
             self.objective = objective
-            self.save_model(self.args.output_dir)
+            # self.save_model(self.args.output_dir)
 
         # --- lxuechen: Combine logging and evaluation
         logs = dict(dev=metrics)
@@ -659,10 +659,10 @@ class Trainer(transformers.Trainer):
                 key: value.cpu().float() if torch.is_tensor(value) else value
                 for key, value in spectrum_outputs.items()
             }
-            utils.tsave(
-                state_dicts,
-                utils.join(self.args.output_dir, 'spectrum', f'global_step_{self.global_step:06d}.pt')
-            )
+            # utils.tsave(
+            #     state_dicts,
+            #     utils.join(self.args.output_dir, 'spectrum', f'global_step_{self.global_step:06d}.pt')
+            # )
 
             torch.set_default_dtype(default_dtype)
             self.model.to(dtype=default_dtype)
@@ -678,10 +678,10 @@ class Trainer(transformers.Trainer):
         for name, param in self.model.named_parameters():
             if param.requires_grad:
                 state_dicts[name] = param.data.cpu().float()
-        utils.tsave(
-            state_dicts,
-            utils.join(self.args.output_dir, 'grad_params', f'global_step_{self.global_step:06d}.pt')
-        )
+        # utils.tsave(
+        #     state_dicts,
+        #     utils.join(self.args.output_dir, 'grad_params', f'global_step_{self.global_step:06d}.pt')
+        # )
         # ---
 
         return logging_loss_scalar

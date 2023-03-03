@@ -146,7 +146,7 @@ class TrainingArguments(transformers.TrainingArguments):
     ema_model_gamma: float = field(default=0.99)
     ema_model_start_from: int = field(default=1000)
     lr_decay: str = field(default="yes")
-    eval_epochs: int = field(default=10)
+    eval_epochs: int = field(default=1)
 
     evaluate_during_training: str = field(
         default="yes",

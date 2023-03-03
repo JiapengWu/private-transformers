@@ -46,7 +46,7 @@ setuptools.setup(
         "scipy",
         "jupyterlab",
         "jupyter",
-        "ml-swissknife",
+        "ml-swissknife==0.1.8",
         "opt_einsum",
         "pytest"
     ],

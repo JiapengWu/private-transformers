@@ -34,7 +34,8 @@ from transformers import GlueDataTrainingArguments as DataTrainingArguments
 from transformers import GlueDataset
 from transformers import HfArgumentParser, set_seed
 
-from private_transformers import PrivacyEngine
+from .src.customized_privacy_engine import CustomizedPrivateEngine
+# from private_transformers import PrivacyEngine
 from .src.common import true_tags
 from .src.compiled_args import PrivacyArguments, TrainingArguments, AuxiliaryArguments
 from .src.dataset import FewShotDataset
@@ -612,7 +613,7 @@ def main():
 
     named_params = [(name, param) for name, param in model.named_parameters() if param.requires_grad]
     print('Params to update: ')
-    print(json.dumps([name for name, param in named_params], indent=4))
+    # print(json.dumps([name for name, param in named_params], indent=4))
     num_differentiable_params = utils.count_parameters(model, only_differentiable=True)
     print(f'Number of differentiable params: {num_differentiable_params / 1e6:.3f} million')
 
@@ -696,7 +697,7 @@ def main():
         privacy_args.per_example_max_grad_norm = None
     else:
         total_train_batch_size = training_args.gradient_accumulation_steps * training_args.per_device_train_batch_size
-        privacy_engine = PrivacyEngine(
+        privacy_engine = CustomizedPrivateEngine(
             module=model,
             batch_size=total_train_batch_size,
             sample_size=len(train_dataset),
@@ -739,20 +740,20 @@ def main():
             torch.save(model_args, os.path.join(training_args.output_dir, "model_args.bin"))
             torch.save(data_args, os.path.join(training_args.output_dir, "data_args.bin"))
 
-    if training_args.do_eval or training_args.do_predict:
-        # Reload the best checkpoint (for eval or predict).
-        logger.info("*** Loading best checkpoint ***")
-        model = model_fn.from_pretrained(training_args.output_dir)
-        model = model.to(training_args.device)
-        trainer.model = model
-        if data_args.prompt:
-            model.label_word_list = torch.tensor(train_dataset.label_word_list).long().cuda()
-        if output_modes_mapping[data_args.task_name] == 'regression':
-            # lower / upper bounds
-            model.lb, model.ub = bound_mapping[data_args.task_name]
-        model.model_args = model_args
-        model.data_args = data_args
-        model.tokenizer = tokenizer
+    # if training_args.do_eval or training_args.do_predict:
+    #     # Reload the best checkpoint (for eval or predict).
+    #     logger.info("*** Loading best checkpoint ***")
+    #     model = model_fn.from_pretrained(training_args.output_dir)
+    #     model = model.to(training_args.device)
+    #     trainer.model = model
+    #     if data_args.prompt:
+    #         model.label_word_list = torch.tensor(train_dataset.label_word_list).long().cuda()
+    #     if output_modes_mapping[data_args.task_name] == 'regression':
+    #         # lower / upper bounds
+    #         model.lb, model.ub = bound_mapping[data_args.task_name]
+    #     model.model_args = model_args
+    #     model.data_args = data_args
+    #     model.tokenizer = tokenizer
 
     # Evaluation
     final_result = {'time': str(datetime.today())}

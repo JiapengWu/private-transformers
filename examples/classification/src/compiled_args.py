@@ -61,7 +61,7 @@ class PrivacyArguments:
 
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
-    eval_epochs: int = field(default=10, metadata={"help": "Evaluate once such epochs"})
+    eval_epochs: int = field(default=1, metadata={"help": "Evaluate once such epochs"})
     evaluate_before_training: bool = field(default=False, metadata={"help": "Run evaluation before training."})
     lr_decay: str = field(
         default="no", metadata={"help": "Apply the usual linear decay if `yes`, otherwise no deacy."}
