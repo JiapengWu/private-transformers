@@ -129,7 +129,7 @@ def main(
     attention_only="no",
     static_lm_head="no",
     static_embedding="no",
-    per_device_train_batch_size=29,
+    per_device_train_batch_size=80,
     eval_steps=1000000000,
     eval_spectrum="no",
     max_spectrum_batches=2,

@@ -2,19 +2,15 @@ import torch
 import numpy as np
 from private_transformers import PrivacyEngine
 import math
-import time
 
 class CustomizedPrivateEngine(PrivacyEngine):
-    large_batch_per_sample_grad = []
-    large_batch_per_sample_grad_norm = []
     alpha: float = 0.5
     threshold = 0.85
-    bits_noise_multiplier = 2.0
-    lr_Z = 0.1
-    max_search_iterations = 3
+    bits_noise_multiplier = 5.0
+    lr_Z = 0.05
+    max_search_iterations = 6
     last_max_norm = 0.5
     search_sigmas = [1, 1, 2, 2, 4, 4]
-    param_index_bound = []
     
     def calc_clipped_cosine_sim(self, per_sample_norms, scale_factor):
         per_sample_clip_factor = (
@@ -32,12 +28,6 @@ class CustomizedPrivateEngine(PrivacyEngine):
             true_grad_squared_sum += torch.sum(true_grad ** 2)
             dot_prod_sum += torch.sum(clipped_grad * true_grad)
         return (dot_prod_sum / (clipped_grad_squared_sum * true_grad_squared_sum).sqrt()).item()
-        # print("True cosine similarity:")
-        # print(torch.nn.functional.cosine_similarity(clipped_gradient, true_batch_gradient, dim=0).item())
-        # print("Approx cosine similarity:")
-        # print(dot_prod_sum / (clipped_grad_squared_sum * true_grad_squared_sum).sqrt())
-        # clipped_gradient = torch.einsum("i,i...->...", per_sample_clip_factor, true_per_sample_gradient).to(true_batch_gradient.device)
-        # return torch.nn.functional.cosine_similarity(clipped_gradient, true_batch_gradient, dim=0).item()
 
     @torch.no_grad()
     def _accumulate_summed_grad(self, loss, scale):
@@ -62,13 +52,6 @@ class CustomizedPrivateEngine(PrivacyEngine):
 
         # The stack operation here is prone to error, thus clarify where the error is.
         per_sample_norms = torch.stack(norm_sample, dim=0).norm(2, dim=0)
-        # true_per_sample_gradient = torch.cat([torch.flatten(p.grad_sample, 1, -1) for _, p in self.named_params], dim=1)
-        
-        # true_batch_gradient = []
-        # for _, param in self.named_params:
-        #     true_batch_gradient.append(torch.mean(torch.flatten(param.grad_sample, 1, -1), dim=0))
-        # true_batch_gradient = torch.cat(true_batch_gradient)
-        # print(true_batch_gradient.shape)
 
         C = self.last_max_norm
         for _ in range(2):
@@ -95,8 +78,6 @@ class CustomizedPrivateEngine(PrivacyEngine):
             t += 1
 
         scale_factor = lower + (upper - lower) * self.alpha
-        # print(f"scale_factor: {scale_factor}, cosine_similarity: {self.calc_clipped_cosine_sim(per_sample_norms, scale_factor)}")
-        # print(f"{time.time() - start} seconds to find optimal bound.")
         scaled_per_param_norms = per_sample_norms / scale_factor
         per_sample_clip_factor = (
             self.max_grad_norm / (scaled_per_param_norms + 1e-6)
