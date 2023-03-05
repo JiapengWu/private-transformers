@@ -26,10 +26,14 @@ Supply at least 3 arguments:
 - `--data_folder`: path to the unzipped data folder
 - `--task_mode`: name of task; one of `e2e` and `dart`
 
-For instance, to fine-tune GPT-2 on E2E at ε = 8, run the following from the `examples` folder of this repo:
+For instance, to fine-tune GPT-2 on E2E at ε = 3, run the following from the `examples` folder of this repo:
 
 ```bash
-bash table2text/run.sh <output_dir> <data_folder> "e2e"
+bash table2text/run.sh table2text/prefix-tuning "e2e" gpt2 12 1.1 64 256 1
+```
+To fine-tune GPT-2 on E2E at ε = 8:
+```bash
+bash table2text/run.sh table2text/prefix-tuning "e2e" gpt2 16 1.04 64 1024 1
 ```
 
 The script by default uses ghost clipping, and the micro batch size is tweaked so that things should run smoothly even

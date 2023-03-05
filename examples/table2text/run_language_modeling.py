@@ -30,11 +30,13 @@ from transformers import HfArgumentParser, MODEL_WITH_LM_HEAD_MAPPING, set_seed
 from transformers.models.gpt2 import GPT2Tokenizer
 from transformers.optimization import get_linear_schedule_with_warmup
 
+from .customized_privacy_engine import CustomizedPrivateEngine
 from private_transformers import PrivacyEngine
 from .compiled_args import (AuxiliaryArguments, DataTrainingArguments, ModelArguments, PrivacyArguments,
                             TrainingArguments)
 from .misc import get_all_datasets, get_prompt_dataset
 from .trainer import Trainer
+
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +176,7 @@ def main():
         training_args=training_args,
         model_args=model_args,
     )
+    print(len(train_dataset))
 
     # Materialize the prompts.
     generation_stuff = dict(
@@ -214,7 +217,7 @@ def main():
     names = tuple(name for name, param in model.named_parameters() if param.requires_grad)
     num_trainable_params = sum(param.numel() for param in params)
     print(f"Number of trainable params: {num_trainable_params / 1e6:.4f} million")
-    print(json.dumps(names, indent=4))
+    # print(json.dumps(names, indent=4))
 
     # TODO: Using a single gigantic parameter group is okay only when `weight_decay` is 0.
     #   Biases and LM parameters should not be decayed perhaps even with privacy.
@@ -245,15 +248,13 @@ def main():
         privacy_args.per_example_max_grad_norm = None
     else:
         actual_batch_size = training_args.per_device_train_batch_size * training_args.gradient_accumulation_steps
-        privacy_engine = PrivacyEngine(
+        privacy_engine = CustomizedPrivateEngine(
             module=model,
             batch_size=actual_batch_size,
             sample_size=len(train_dataset),
             epochs=training_args.num_train_epochs,
             max_grad_norm=privacy_args.per_example_max_grad_norm,
             noise_multiplier=privacy_args.noise_multiplier,
-            target_epsilon=privacy_args.target_epsilon,
-            target_delta=privacy_args.target_delta,
             accounting_mode=privacy_args.accounting_mode,
             clipping_mode=privacy_args.clipping_mode,
         )
